@@ -14,8 +14,17 @@ from markdown.blockprocessors import BlockProcessor
 from markdown.treeprocessors import Treeprocessor
 from markdown.util import etree
 import re
+import random
 
 # SIDENOTEPATTERN = r'\+\-\>' + BRK   # matches +->[side note]
+
+"""
+<label for="mn-demo" class="margin-toggle">&#8853;</label>
+<input type="checkbox" id="mn-demo" class="margin-toggle" checked />
+<span class="marginnote">
+The top is soft maple, and is about 45" long by 40" wide. The base and the butterfly keys in the top are black locust. Finish is about 4 coats of Arm-R-Seal.
+</span>
+"""
 
 class MarginNoteProcessor(BlockProcessor):
     RE_FENCE_START = r'^\-\>'
@@ -34,9 +43,12 @@ class MarginNoteProcessor(BlockProcessor):
                 # remove fence
                 blocks[block_num] = re.sub(self.RE_FENCE_END, '', block)
                 # render fenced area inside a new div
-                e = etree.SubElement(parent, 'div')
+                label = etree.SubElement(parent, 'label', {'for': '', 'class': 'margin-toggle'})
+                checkbox = etree.SubElement(parent, 'input')
+                span = etree.SubElement(parent, 'span')
+
                 e.set('style', 'display: inline-block; border: 1px solid red;')
-                self.parser.parseBlocks(e, blocks[0:block_num + 1])
+                self.parser.parseBlocks(span, blocks[0 : block_num + 1])
                 # remove used blocks
                 for i in range(0, block_num + 1):
                     blocks.pop(0)
@@ -48,6 +60,18 @@ class MarginNoteProcessor(BlockProcessor):
 class MarginNoteExtension(Extension):
     def extendMarkdown(self, md):
         md.parser.blockprocessors.register(MarginNoteProcessor(md.parser), 'box', 175)
+
+class ParagraphToDivProcessor(Treeprocessor):
+    def run(self, root):
+        paragraphs = root.findall("p")
+        for p in paragraphs:
+            p.tag = 'div'
+            p.set('class', 'p')
+
+class ParagraphToDivExtension(Extension):
+    def extendMarkdown(self, md):
+        md.registerExtension(self)
+        md.treeprocessors.register(ParagraphToDivProcessor(md.parser), 'ptodiv', 175)
 #
 #class TufteMargin(Pattern):
 #    def handleMatch(self, m):
