@@ -26,9 +26,29 @@ The top is soft maple, and is about 45" long by 40" wide. The base and the butte
 </span>
 """
 
+class BlockMungerProcessor(BlockProcessor):
+    RE_FENCE_START = r'\-\>'
+    RE_FENCE_END = r'<-'
+
+    def test(self, parent, block):
+        return re.search(self.RE_FENCE_START, block)
+
+    def run(self, parent, blocks):
+        original_block = blocks[0]
+        blocks[0] = re.sub(self.RE_FENCE_START, '<section>', blocks[0])
+        blocks[0] = re.sub(self.RE_FENCE_END, '</section>', blocks[0])
+
+class BlockMungerExtension(Extension):
+    def extendMarkdown(self, md):
+        md.parser.blockprocessors.register(
+            BlockMungerProcessor(md.parser),
+            'munger',
+            175
+        )
+
 class MarginNoteProcessor(BlockProcessor):
-    RE_FENCE_START = r'^\-\>'
-    RE_FENCE_END = r'<-\s*$'
+    RE_FENCE_START = r'\-\>'
+    RE_FENCE_END = r'<-'
 
     def __init__(self, md, label_text, use_random_note_id):
         super().__init__(md.parser)
@@ -38,7 +58,7 @@ class MarginNoteProcessor(BlockProcessor):
         self._id_counter = 0
 
     def test(self, parent, block):
-        return re.match(self.RE_FENCE_START, block)
+        return re.search(self.RE_FENCE_START, block)
 
     def run(self, parent, blocks):
         original_block = blocks[0]

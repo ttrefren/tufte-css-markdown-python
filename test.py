@@ -1,7 +1,7 @@
 import unittest
 import markdown
 
-from tufte import MarginNoteExtension, ParagraphToDivExtension
+import tufte
 
 class TestMarginNoteExtension(unittest.TestCase):
 
@@ -12,7 +12,7 @@ This is an inline test block.
 
 It has multiple blocks within it.<-
 """
-        md = markdown.Markdown(extensions=[MarginNoteExtension(use_random_note_id=False)], output_format='html5')
+        md = markdown.Markdown(extensions=[tufte.MarginNoteExtension(use_random_note_id=False)], output_format='html5')
         output = md.convert(text)
         expected = """\
 <label class="margin-toggle" for="note_0">&#8853</label>
@@ -31,25 +31,38 @@ It has multiple blocks within it.<-
 
 It
 """
-        md = markdown.Markdown(extensions=[ParagraphToDivExtension()])
+        md = markdown.Markdown(extensions=[tufte.ParagraphToDivExtension()])
         output = md.convert(text)
         self.assertEqual(output, '<div class="p">This</div>\n<div class="p">It</div>')
 
-# TODO in future - implement so that inline will work rather than requiring a newline
-#    def test_inline(self):
-#        text = "hello there ->this is an inline note<-"
-#        md = markdown.Markdown(extensions=[MarginNoteExtension(use_random_note_id=False)], output_format='html5')
-#        output = md.convert(text)
-#        expected = """\
-#hello there <label class="margin-toggle" for="note_0">&#8853</label>
-#<input checked="1" class="margin-toggle" id="note_0" type="checkbox">
-#<aside class="marginnote">
-#<p>this is an inline note</p>
-#</aside>"""
-#        print(output)
-#        print(' ')
-#        print(expected)
-#        self.assertEqual(output, expected)
+    def test_inline(self):
+        text = """hello there ->this is an
+
+inline note<- that spans blocks"""
+        md = markdown.Markdown(extensions=[tufte.MarginNoteExtension(use_random_note_id=False)], output_format='html5')
+        output = md.convert(text)
+        expected = """\
+<p>
+hello there <label class="margin-toggle" for="note_0">&#8853</label>
+<input checked="1" class="margin-toggle" id="note_0" type="checkbox">
+<aside class="marginnote">
+<p>this is an</p>
+<p>inline note</p>
+</aside>
+that spans blocks
+</p>"""
+        print(output)
+        print(' ')
+        print(expected)
+        self.assertEqual(output, expected)
+
+    def test_block_munging(self):
+        text = "this is ->it<- oh yeah"
+        md = markdown.Markdown(extensions=[tufte.BlockMungerExtension()])
+        output = md.convert(text)
+        print(output)
+        self.assertEqual(output, '<p>this is <section>it</section> oh yeah</p>')
+
 
 
 
