@@ -12,7 +12,7 @@ from markdown.extensions import Extension
 from markdown.inlinepatterns import Pattern
 from markdown.blockprocessors import BlockProcessor
 from markdown.treeprocessors import Treeprocessor
-from markdown.util import etree
+import xml.etree.ElementTree as etree
 import re
 import random
 
@@ -28,7 +28,14 @@ The top is soft maple, and is about 45" long by 40" wide. The base and the butte
 
 class MarginNoteProcessor(BlockProcessor):
     RE_FENCE_START = r'^\-\>'
-    RE_FENCE_END = r'<-\s*$'  # last non-blank line, e.g, '!!!\n  \n\n'
+    RE_FENCE_END = r'<-\s*$'
+
+    def __init__(self, md, label_text, use_random_note_id):
+        super().__init__(md.parser)
+        self.md = md
+        self._label_text = label_text
+        self._use_random_note_id = use_random_note_id
+        self._id_counter = 0
 
     def test(self, parent, block):
         return re.match(self.RE_FENCE_START, block)
@@ -42,13 +49,29 @@ class MarginNoteProcessor(BlockProcessor):
             if re.search(self.RE_FENCE_END, block):
                 # remove fence
                 blocks[block_num] = re.sub(self.RE_FENCE_END, '', block)
-                # render fenced area inside a new div
-                label = etree.SubElement(parent, 'label', {'for': '', 'class': 'margin-toggle'})
-                checkbox = etree.SubElement(parent, 'input')
-                span = etree.SubElement(parent, 'span')
 
-                e.set('style', 'display: inline-block; border: 1px solid red;')
-                self.parser.parseBlocks(span, blocks[0 : block_num + 1])
+                if self._use_random_note_id:
+                    note_id = str(random.random())
+                else:
+                    note_id = f"note_{self._id_counter}"
+                    self._id_counter += 1
+
+                label = etree.SubElement(parent, 'label', {'for': note_id, 'class':'margin-toggle'})
+                label.text = self.md.htmlStash.store(self._label_text)
+                label.tail = '\n'
+
+                checkbox = etree.SubElement(parent, 'input', {
+                    'id': note_id,
+                    'type': 'checkbox',
+                    'class': 'margin-toggle',
+                    'checked': '1'
+                })
+                checkbox.tail = '\n'
+
+                aside = etree.SubElement(parent, 'aside', {'class': 'marginnote'})
+                aside.tail = '\n'
+
+                self.parser.parseBlocks(aside, blocks[0 : block_num + 1])
                 # remove used blocks
                 for i in range(0, block_num + 1):
                     blocks.pop(0)
@@ -58,8 +81,23 @@ class MarginNoteProcessor(BlockProcessor):
         return False  # equivalent to our test() routine returning False
 
 class MarginNoteExtension(Extension):
+    def __init__(self, **kwargs):
+        self.config = {
+            'use_random_note_id' : [True, 'use a random note ID, or start at zero'],
+            'label_text': ['&#8853', 'what label text to use when on a small screen']
+        }
+        super(MarginNoteExtension, self).__init__(**kwargs)
+
     def extendMarkdown(self, md):
-        md.parser.blockprocessors.register(MarginNoteProcessor(md.parser), 'box', 175)
+        md.parser.blockprocessors.register(
+            MarginNoteProcessor(
+                md,
+                self.getConfig('label_text'),
+                self.getConfig('use_random_note_id'),
+            ),
+            'margin_note',
+            175
+        )
 
 class ParagraphToDivProcessor(Treeprocessor):
     def run(self, root):
