@@ -1,11 +1,11 @@
 """
-Source: https://github.com/andrewstephens75/gensite/blob/dev/gensite/markdown_extensions/tufte_aside.py
+Inspired by: https://github.com/andrewstephens75/gensite/blob/dev/gensite/markdown_extensions/tufte_aside.py
 """
 # Markdown extension that allows Tufte-style asides (in conjuction with
 # the tufte.css
 # Supported syntax:
-# ->[This is a margin note. It will be placed next to the main text]
-# +->[This is a side note. It will be placed next the main text with a reference number]
+# ->[This is a margin note. It will be placed next to the main text]<-
+# +->[This is a side note. It will be placed next the main text with a reference number]<-
 
 
 from markdown.extensions import Extension
@@ -16,19 +16,11 @@ import xml.etree.ElementTree as etree
 import re
 import random
 
-# SIDENOTEPATTERN = r'\+\-\>' + BRK   # matches +->[side note]
-
-"""
-<label for="mn-demo" class="margin-toggle">&#8853;</label>
-<input type="checkbox" id="mn-demo" class="margin-toggle" checked />
-<span class="marginnote">
-The top is soft maple, and is about 45" long by 40" wide. The base and the butterfly keys in the top are black locust. Finish is about 4 coats of Arm-R-Seal.
-</span>
-"""
-
-class MarginNoteProcessor(BlockProcessor):
-    RE_FENCE_START = r'\-\>'
-    RE_FENCE_END = r'<-'
+class TufteNoteProcessor(BlockProcessor):
+    # The only difference between a sidenote and a margin note is the leading `+`.
+    RE_SIDENOTE_START = r'\+-\>\['
+    RE_NOTE_START = r'\+?-\>\['
+    RE_NOTE_END = r'\]<-'
 
     def __init__(self, md, label_text, use_random_note_id):
         super().__init__(md.parser)
@@ -38,7 +30,7 @@ class MarginNoteProcessor(BlockProcessor):
         self._id_counter = 0
 
     def test(self, parent, block):
-        return re.search(self.RE_FENCE_START, block)
+        return re.search(self.RE_NOTE_START, block)
 
     def run(self, parent, blocks):
         """
@@ -47,26 +39,30 @@ class MarginNoteProcessor(BlockProcessor):
 
         Supports standalone or inline notes, and notes can contain markdown.
         """
+        is_sidenote = re.search(self.RE_SIDENOTE_START, blocks[0])
         for block_num, block in enumerate(blocks):
-            if re.search(self.RE_FENCE_END, block):
+            if re.search(self.RE_NOTE_END, block):
                 note_id = str(random.random()) if self._use_random_note_id else f"note_{self._id_counter}"
                 self._id_counter += 1
 
                 p = etree.SubElement(parent, 'p')
                 p.tail = '\n'
 
-                pre_note_content, note_content_start = re.split(self.RE_FENCE_START, blocks[0], maxsplit=1)
+                pre_note_content, note_content_start = re.split(self.RE_NOTE_START, blocks[0], maxsplit=1)
                 p.text = '\n' + pre_note_content
 
                 # single line notes are a special case since we have to process the middle
                 if block_num == 0:
-                    note_body, after_note_content = re.split(self.RE_FENCE_END, note_content_start, maxsplit=1)
+                    note_body, after_note_content = re.split(self.RE_NOTE_END, note_content_start, maxsplit=1)
                     note_blocks = [note_body]
                 else:
-                    note_last_line, after_note_content = re.split(self.RE_FENCE_END, block, maxsplit=1)
+                    note_last_line, after_note_content = re.split(self.RE_NOTE_END, block, maxsplit=1)
                     note_blocks = [note_content_start] + blocks[1 : block_num] + [note_last_line]
 
-                label = etree.SubElement(p, 'label', {'for': note_id, 'class':'margin-toggle'})
+                label = etree.SubElement(p, 'label', {
+                    'for': note_id,
+                    'class':'margin-toggle' + (' sidenote-number' if is_sidenote else '')
+                })
                 label.text = self.md.htmlStash.store(self._label_text)
                 label.tail = '\n'
 
@@ -78,69 +74,26 @@ class MarginNoteProcessor(BlockProcessor):
                 })
                 checkbox.tail = '\n'
 
-                aside = etree.SubElement(p, 'aside', {'class': 'marginnote'})
+                aside = etree.SubElement(p, 'aside', {'class': 'sidenote' if is_sidenote else 'marginnote'})
                 aside.tail = '\n' + after_note_content + '\n'
 
                 self.parser.parseBlocks(aside, note_blocks)
 
-                #label = f'<label class="margin-toggle" for="{note_id}">{self._label_text}</label>'
-                #checkbox = f'<input checked="1" class="margin-toggle" id="{note_id}" type="checkbox">'
-                #end_block = block_num
                 for i in range(0, block_num + 1):
                     blocks.pop(0)
                 return
 
-        #original_blocks = blocks.copy()
-
-        #original_block = blocks[0]
-        #blocks[0] = re.sub(self.RE_FENCE_START, '', blocks[0])
-
-        ## Find block with ending fence
-        #for block_num, block in enumerate(blocks):
-        #    if re.search(self.RE_FENCE_END, block):
-        #        blocks[block_num] = re.sub(self.RE_FENCE_END, '', block)
-
-        #        if self._use_random_note_id:
-        #            note_id = str(random.random())
-        #        else:
-        #            note_id = f"note_{self._id_counter}"
-        #            self._id_counter += 1
-
-        #        label = etree.SubElement(parent, 'label', {'for': note_id, 'class':'margin-toggle'})
-        #        label.text = self.md.htmlStash.store(self._label_text)
-        #        label.tail = '\n'
-
-        #        checkbox = etree.SubElement(parent, 'input', {
-        #            'id': note_id,
-        #            'type': 'checkbox',
-        #            'class': 'margin-toggle',
-        #            'checked': '1'
-        #        })
-        #        checkbox.tail = '\n'
-
-        #        aside = etree.SubElement(parent, 'aside', {'class': 'marginnote'})
-        #        aside.tail = '\n'
-
-        #        self.parser.parseBlocks(aside, blocks[0 : block_num + 1])
-        #        # remove used blocks
-        #        for i in range(0, block_num + 1):
-        #            blocks.pop(0)
-        #        return True  # or could have had no return statement
-        ## No closing marker!  Restore and do nothing
-        #blocks[0] = original_block
-        #return False  # equivalent to our test() routine returning False
-
-class MarginNoteExtension(Extension):
+class TufteNoteExtension(Extension):
     def __init__(self, **kwargs):
         self.config = {
             'use_random_note_id' : [True, 'use a random note ID, or start at zero'],
             'label_text': ['&#8853', 'what label text to use when on a small screen']
         }
-        super(MarginNoteExtension, self).__init__(**kwargs)
+        super(TufteNoteExtension, self).__init__(**kwargs)
 
     def extendMarkdown(self, md):
         md.parser.blockprocessors.register(
-            MarginNoteProcessor(
+            TufteNoteProcessor(
                 md,
                 self.getConfig('label_text'),
                 self.getConfig('use_random_note_id'),

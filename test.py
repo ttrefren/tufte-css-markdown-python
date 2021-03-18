@@ -3,16 +3,16 @@ import markdown
 
 import tufte
 
-class TestMarginNoteExtension(unittest.TestCase):
+class TestTufteNoteExtension(unittest.TestCase):
 
     def test_block(self):
         text = """\
-->
+->[
 This is an inline test block.
 
-It has multiple blocks within it.<-
+It has multiple blocks within it.]<-
 """
-        md = markdown.Markdown(extensions=[tufte.MarginNoteExtension(use_random_note_id=False)], output_format='html5')
+        md = markdown.Markdown(extensions=[tufte.TufteNoteExtension(use_random_note_id=False)], output_format='html5')
         output = md.convert(text)
         expected = """\
 <p>
@@ -38,8 +38,8 @@ It
         self.assertEqual(output, '<div class="p">This</div>\n<div class="p">It</div>')
 
     def test_inline_note(self):
-        text = "a ->b<- c"
-        md = markdown.Markdown(extensions=[tufte.MarginNoteExtension(use_random_note_id=False)], output_format='html5')
+        text = "a ->[b]<- c"
+        md = markdown.Markdown(extensions=[tufte.TufteNoteExtension(use_random_note_id=False)], output_format='html5')
         output = md.convert(text)
         expected = """\
 <p>
@@ -53,10 +53,10 @@ a <label class="margin-toggle" for="note_0">&#8853</label>
         self.assertEqual(output, expected)
 
     def test_inline_multiblock_note(self):
-        text = """hello there ->this is an
+        text = """hello there ->[this is an
 
-inline note<- that spans blocks"""
-        md = markdown.Markdown(extensions=[tufte.MarginNoteExtension(use_random_note_id=False)], output_format='html5')
+inline note]<- that spans blocks"""
+        md = markdown.Markdown(extensions=[tufte.TufteNoteExtension(use_random_note_id=False)], output_format='html5')
         output = md.convert(text)
         expected = """\
 <p>
@@ -71,15 +71,15 @@ hello there <label class="margin-toggle" for="note_0">&#8853</label>
         self.assertEqual(output, expected)
 
     def test_inline_note_with_markdown(self):
-        text = """hello there ->this is **an**
+        text = """hello there ->[this is **an**
 
 inline note
 
 - with
 - a
 - list
-<- that spans blocks"""
-        md = markdown.Markdown(extensions=[tufte.MarginNoteExtension(use_random_note_id=False)], output_format='html5')
+]<- that spans blocks"""
+        md = markdown.Markdown(extensions=[tufte.TufteNoteExtension(use_random_note_id=False)], output_format='html5')
         output = md.convert(text)
         expected = """\
 <p>
@@ -98,6 +98,30 @@ hello there <label class="margin-toggle" for="note_0">&#8853</label>
  that spans blocks
 </p>"""
         self.assertEqual(output, expected)
+
+    def test_sidenote(self):
+        text = """\
++->[
+This is an inline test block for a sidenote.
+
+It has multiple blocks within it.]<-
+"""
+        md = markdown.Markdown(extensions=[tufte.TufteNoteExtension(use_random_note_id=False)], output_format='html5')
+        output = md.convert(text)
+        expected = """\
+<p>
+<label class="margin-toggle sidenote-number" for="note_0">&#8853</label>
+<input checked="1" class="margin-toggle" id="note_0" type="checkbox">
+<aside class="sidenote">
+<p>This is an inline test block for a sidenote.</p>
+<p>It has multiple blocks within it.</p>
+</aside>
+</p>"""
+        #print(output)
+        #print(' ')
+        #print(expected)
+        self.assertEqual(output, expected)
+
 
 if __name__ == '__main__':
     unittest.main()
