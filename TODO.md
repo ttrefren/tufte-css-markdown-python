@@ -1,0 +1,5 @@
+- copy tweaks css over
+- update readme
+- tests to write
+  - multiple sidenotes in one line
+  - multiple sidenotes in multiple lines
