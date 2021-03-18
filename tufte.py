@@ -61,26 +61,36 @@ class MarginNoteProcessor(BlockProcessor):
         return re.search(self.RE_FENCE_START, block)
 
     def run(self, parent, blocks):
-        original_block = blocks[0]
-        blocks[0] = re.sub(self.RE_FENCE_START, '', blocks[0])
+        """
+        Replace margin / side notes with the full HTML required
+        for support in tufte.css.
 
-        # Find block with ending fence
+        Supports standalone or inline notes, and notes can contain markdown.
+        """
         for block_num, block in enumerate(blocks):
             if re.search(self.RE_FENCE_END, block):
-                # remove fence
-                blocks[block_num] = re.sub(self.RE_FENCE_END, '', block)
+                note_id = str(random.random()) if self._use_random_note_id else f"note_{self._id_counter}"
+                self._id_counter += 1
 
-                if self._use_random_note_id:
-                    note_id = str(random.random())
+                p = etree.SubElement(parent, 'p')
+                p.tail = '\n'
+
+                pre_note_content, note_content_start = re.split(self.RE_FENCE_START, blocks[0], maxsplit=1)
+                p.text = '\n' + pre_note_content
+
+                # single line notes are a special case since we have to process the middle
+                if block_num == 0:
+                    note_body, after_note_content = re.split(self.RE_FENCE_END, note_content_start, maxsplit=1)
+                    note_blocks = [note_body]
                 else:
-                    note_id = f"note_{self._id_counter}"
-                    self._id_counter += 1
+                    note_last_line, after_note_content = re.split(self.RE_FENCE_END, block, maxsplit=1)
+                    note_blocks = [note_content_start] + blocks[1 : block_num] + [note_last_line]
 
-                label = etree.SubElement(parent, 'label', {'for': note_id, 'class':'margin-toggle'})
+                label = etree.SubElement(p, 'label', {'for': note_id, 'class':'margin-toggle'})
                 label.text = self.md.htmlStash.store(self._label_text)
                 label.tail = '\n'
 
-                checkbox = etree.SubElement(parent, 'input', {
+                checkbox = etree.SubElement(p, 'input', {
                     'id': note_id,
                     'type': 'checkbox',
                     'class': 'margin-toggle',
@@ -88,17 +98,57 @@ class MarginNoteProcessor(BlockProcessor):
                 })
                 checkbox.tail = '\n'
 
-                aside = etree.SubElement(parent, 'aside', {'class': 'marginnote'})
-                aside.tail = '\n'
+                aside = etree.SubElement(p, 'aside', {'class': 'marginnote'})
+                aside.tail = '\n' + after_note_content + '\n'
 
-                self.parser.parseBlocks(aside, blocks[0 : block_num + 1])
-                # remove used blocks
+                self.parser.parseBlocks(aside, note_blocks)
+
+                #label = f'<label class="margin-toggle" for="{note_id}">{self._label_text}</label>'
+                #checkbox = f'<input checked="1" class="margin-toggle" id="{note_id}" type="checkbox">'
+                #end_block = block_num
                 for i in range(0, block_num + 1):
                     blocks.pop(0)
-                return True  # or could have had no return statement
-        # No closing marker!  Restore and do nothing
-        blocks[0] = original_block
-        return False  # equivalent to our test() routine returning False
+                return
+
+        #original_blocks = blocks.copy()
+
+        #original_block = blocks[0]
+        #blocks[0] = re.sub(self.RE_FENCE_START, '', blocks[0])
+
+        ## Find block with ending fence
+        #for block_num, block in enumerate(blocks):
+        #    if re.search(self.RE_FENCE_END, block):
+        #        blocks[block_num] = re.sub(self.RE_FENCE_END, '', block)
+
+        #        if self._use_random_note_id:
+        #            note_id = str(random.random())
+        #        else:
+        #            note_id = f"note_{self._id_counter}"
+        #            self._id_counter += 1
+
+        #        label = etree.SubElement(parent, 'label', {'for': note_id, 'class':'margin-toggle'})
+        #        label.text = self.md.htmlStash.store(self._label_text)
+        #        label.tail = '\n'
+
+        #        checkbox = etree.SubElement(parent, 'input', {
+        #            'id': note_id,
+        #            'type': 'checkbox',
+        #            'class': 'margin-toggle',
+        #            'checked': '1'
+        #        })
+        #        checkbox.tail = '\n'
+
+        #        aside = etree.SubElement(parent, 'aside', {'class': 'marginnote'})
+        #        aside.tail = '\n'
+
+        #        self.parser.parseBlocks(aside, blocks[0 : block_num + 1])
+        #        # remove used blocks
+        #        for i in range(0, block_num + 1):
+        #            blocks.pop(0)
+        #        return True  # or could have had no return statement
+        ## No closing marker!  Restore and do nothing
+        #blocks[0] = original_block
+        #return False  # equivalent to our test() routine returning False
 
 class MarginNoteExtension(Extension):
     def __init__(self, **kwargs):
