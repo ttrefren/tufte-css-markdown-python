@@ -15,12 +15,14 @@ It has multiple blocks within it.<-
         md = markdown.Markdown(extensions=[tufte.MarginNoteExtension(use_random_note_id=False)], output_format='html5')
         output = md.convert(text)
         expected = """\
+<p>
 <label class="margin-toggle" for="note_0">&#8853</label>
 <input checked="1" class="margin-toggle" id="note_0" type="checkbox">
 <aside class="marginnote">
 <p>This is an inline test block.</p>
 <p>It has multiple blocks within it.</p>
-</aside>"""
+</aside>
+</p>"""
         #print(output)
         #print(' ')
         #print(expected)
@@ -94,21 +96,8 @@ hello there <label class="margin-toggle" for="note_0">&#8853</label>
 </ul>
 </aside>
  that spans blocks
-</p>
-"""
-        print(output)
-        print(expected)
+</p>"""
         self.assertEqual(output, expected)
-
-    def test_block_munging(self):
-        text = "this is ->it<- oh yeah"
-        md = markdown.Markdown(extensions=[tufte.BlockMungerExtension()])
-        output = md.convert(text)
-        print(output)
-        self.assertEqual(output, '<p>this is <section>it</section> oh yeah</p>')
-
-
-
 
 if __name__ == '__main__':
     unittest.main()
