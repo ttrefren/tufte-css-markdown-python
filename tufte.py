@@ -1,20 +1,27 @@
 """
+Markdown extension that supports tufte-style side and margin notes.
+
+Supports multi-block notes (e.g. embedded paragraphs), but doing so requires
+the additional use of an extension to convert paragraphs to divs.
+
+Syntax:
+    this is a ->[margin note,
+    which can span multiple lines
+
+    and be embedded within a paragraph]<- which is nice.
+
+    +->[this is a numbered sidenote, which also supports multiple blocks if you want]<-
+
 Inspired by: https://github.com/andrewstephens75/gensite/blob/dev/gensite/markdown_extensions/tufte_aside.py
 """
-# Markdown extension that allows Tufte-style asides (in conjuction with
-# the tufte.css
-# Supported syntax:
-# ->[This is a margin note. It will be placed next to the main text]<-
-# +->[This is a side note. It will be placed next the main text with a reference number]<-
-
 
 from markdown.extensions import Extension
-from markdown.inlinepatterns import Pattern
 from markdown.blockprocessors import BlockProcessor
 from markdown.treeprocessors import Treeprocessor
 import xml.etree.ElementTree as etree
 import re
 import random
+
 
 class TufteNoteProcessor(BlockProcessor):
     # The only difference between a sidenote and a margin note is the leading `+`.
@@ -57,11 +64,11 @@ class TufteNoteProcessor(BlockProcessor):
                     note_blocks = [note_body]
                 else:
                     note_last_line, after_note_content = re.split(self.RE_NOTE_END, block, maxsplit=1)
-                    note_blocks = [note_content_start] + blocks[1 : block_num] + [note_last_line]
+                    note_blocks = [note_content_start] + blocks[1: block_num] + [note_last_line]
 
                 label = etree.SubElement(p, 'label', {
                     'for': note_id,
-                    'class':'margin-toggle' + (' sidenote-number' if is_sidenote else '')
+                    'class': 'margin-toggle' + (' sidenote-number' if is_sidenote else '')
                 })
                 label.text = self.md.htmlStash.store(self._label_text)
                 label.tail = '\n'
@@ -83,10 +90,11 @@ class TufteNoteProcessor(BlockProcessor):
                     blocks.pop(0)
                 return
 
+
 class TufteNoteExtension(Extension):
     def __init__(self, **kwargs):
         self.config = {
-            'use_random_note_id' : [True, 'use a random note ID, or start at zero'],
+            'use_random_note_id': [True, 'use a random note ID, or start at zero'],
             'label_text': ['&#8853', 'what label text to use when on a small screen']
         }
         super(TufteNoteExtension, self).__init__(**kwargs)
@@ -102,6 +110,7 @@ class TufteNoteExtension(Extension):
             175
         )
 
+
 class ParagraphToDivProcessor(Treeprocessor):
     def run(self, root):
         paragraphs = root.findall("p")
@@ -109,57 +118,8 @@ class ParagraphToDivProcessor(Treeprocessor):
             p.tag = 'div'
             p.set('class', 'p')
 
+
 class ParagraphToDivExtension(Extension):
     def extendMarkdown(self, md):
         md.registerExtension(self)
         md.treeprocessors.register(ParagraphToDivProcessor(md.parser), 'ptodiv', 175)
-#
-#class TufteMargin(Pattern):
-#    def handleMatch(self, m):
-#        el = etree.Element('span')
-#        el.set("class", "marginnote")
-#        el.text = m.group(2)
-#        return el
-#
-#class TufteSidenote(Pattern):
-#    def handleMatch(self, m):
-#        el = etree.Element('span')
-#        el.set("class", "sidenote")
-#        el.text = m.group(2)
-#        return el
-#
-#class TufteSidenoteTreeProcessor(Treeprocessor):
-#    def __init__(self):
-#        self.count = 1
-#
-#    def run(self, root):
-#        # etree sucks for modifying the tree mainly because there are no text
-#        # nodes, only nodes with tails. Here I remove all children of the parent
-#        # and add them back one-by-one, inserting the required labels
-#        # and checkboxs where needed
-#        parents = root.findall(".//span[@class='sidenote']/..")
-#        self.count = 1
-#        for p in parents:
-#            children = list(p)
-#            for c in children:
-#                p.remove(c)
-#
-#            for c in children:
-#                if (c.tag == 'span') and (c.get('class', "") == 'sidenote'):
-#                    id = "sidenote" + str(self.count)
-#                    self.count = self.count + 1
-#                    p.append(etree.Element("label", {"for" : id, "class" : "margin-toggle sidenote-number"}))
-#                    p.append(etree.Element("input", {"type": "checkbox", "id": id, "class" : "margin-toggle", "checked": 1}))
-#                p.append(c)
-#
-#class TufteAsideExtension(Extension):
-#    """ Extenstion to build Tufte-style margin notes
-#        ->[This is a margin note that will go in the margin] """
-#    def extendMarkdown(self, md, md_globals):
-#
-#        tufte_magin_tag = TufteMargin(MARGINNOTEPATTERN)
-#        tufte_sidenote_tag = TufteSidenote(SIDENOTEPATTERN)
-#        turfe_sidenote_tree = TufteSidenoteTreeProcessor()
-#        md.inlinePatterns.add('tufte_margin', tufte_magin_tag, '_begin')
-#        md.inlinePatterns.add('tufte_sidenote', tufte_sidenote_tag, '_begin')
-#        md.treeprocessors.add('tufte_sidenote_tree', turfe_sidenote_tree, '_end')

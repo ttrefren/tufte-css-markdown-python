@@ -23,9 +23,6 @@ It has multiple blocks within it.]<-
 <p>It has multiple blocks within it.</p>
 </aside>
 </p>"""
-        #print(output)
-        #print(' ')
-        #print(expected)
         self.assertEqual(output, expected)
 
     def test_paragraph_to_div(self):
@@ -117,9 +114,6 @@ It has multiple blocks within it.]<-
 <p>It has multiple blocks within it.</p>
 </aside>
 </p>"""
-        #print(output)
-        #print(' ')
-        #print(expected)
         self.assertEqual(output, expected)
 
 
