@@ -2,9 +2,11 @@
 markdown-python extensions adding support for sidenotes and margin notes to your markdown website that uses [tufte-css](https://edwardtufte.github.io/tufte-css/) for styling.
 
 Margin notes don't have a number, they just show up on the right side margin.
+
 Margin note syntax: `->[your content here]<-`.
 
 Sidenotes have a superscript number.
+
 Sidenote syntax: `+->[your sidenote here]<-`
 
 Note: I went to some effort to support line breaks in the side/margin notes - out of the box, tufte-css only supports a single paragraph per note, since the body of each note is wrapped in a `<span>` tag and you can't use block level elements like `<p>` inside a span or the browser barfs.
