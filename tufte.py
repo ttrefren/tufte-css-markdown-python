@@ -70,7 +70,8 @@ class TufteNoteProcessor(BlockProcessor):
                     'for': note_id,
                     'class': 'margin-toggle' + (' sidenote-number' if is_sidenote else '')
                 })
-                label.text = self.md.htmlStash.store(self._label_text)
+                if not is_sidenote:
+                    label.text = self.md.htmlStash.store(self._label_text)
                 label.tail = '\n'
 
                 checkbox = etree.SubElement(p, 'input', {

@@ -107,7 +107,7 @@ It has multiple blocks within it.]<-
         output = md.convert(text)
         expected = """\
 <p>
-<label class="margin-toggle sidenote-number" for="note_0">&#8853</label>
+<label class="margin-toggle sidenote-number" for="note_0"></label>
 <input checked="1" class="margin-toggle" id="note_0" type="checkbox">
 <aside class="sidenote">
 <p>This is an inline test block for a sidenote.</p>
