@@ -61,7 +61,7 @@ aside {
 		width: 100%;
 }
 .sidenote p:first-child, .marginnote p:first-child {
-    margin-top: 0;
+    display: inline;
 }
 .sidenote p:last-child, .marginnote p:last-child {
     margin-bottom: 0;
