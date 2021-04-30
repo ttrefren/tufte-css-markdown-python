@@ -88,13 +88,15 @@ class TufteNoteProcessor(BlockProcessor):
 
                 for i in range(0, block_num + 1):
                     blocks.pop(0)
-                return
+                return True
+
+        return False
 
 
 class TufteNoteExtension(Extension):
     def __init__(self, **kwargs):
         self.config = {
-            'use_random_note_id': [True, 'use a random note ID, or start at zero'],
+            'use_random_note_id': [False, 'use a random note ID, or start at zero'],
             'label_text': ['&#8853', 'what label text to use when on a small screen']
         }
         super(TufteNoteExtension, self).__init__(**kwargs)

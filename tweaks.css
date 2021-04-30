@@ -1,0 +1,74 @@
+/* Extensions for baseline css from https://github.com/edwardtufte/tufte-css */
+
+section > div {
+    width: 55%;
+    font-size: 1.4rem;
+    line-height: 2rem;
+    margin-top: 1.4rem;
+    margin-bottom: 1.4rem;
+    padding-right: 0;
+    vertical-align: baseline;
+}
+
+section div.p {
+    width: 55%;
+    font-size: 1.4rem;
+    line-height: 2rem;
+    margin-top: 1.4rem;
+    margin-bottom: 1.4rem;
+    padding-right: 0;
+    vertical-align: baseline;
+}
+
+section table th {
+  text-align: left;
+  font-weight: bold;
+  width: 0.1%;
+  white-space: nowrap;
+}
+
+section blockquote {
+  border-left: 1px solid #ccc;
+  font-style: italic;
+  margin-left: 0px;
+}
+
+section blockquote ul {
+    width: 55%;
+    margin-right: 40px;
+}
+
+section blockquote p {
+  padding-left: 30px;
+}
+
+section table td {
+  text-align: left;
+  width: 0.1%;
+  white-space: nowrap;
+}
+
+aside {
+    font-size: 1.4rem;
+    line-height: 2rem;
+    width: 55%;
+}
+
+.sidenote p, .marginnote p {
+    font-size: 1.1rem;
+    line-height: 1.3;
+    margin: 1em 0;
+		width: 100%;
+}
+.sidenote p:first-child, .marginnote p:first-child {
+    margin-top: 0;
+}
+.sidenote p:last-child, .marginnote p:last-child {
+    margin-bottom: 0;
+}
+
+@media (max-width: 760px) {
+  section > aside {
+    width: 95%;
+  }
+}

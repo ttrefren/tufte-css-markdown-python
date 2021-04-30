@@ -3,3 +3,5 @@
 - tests to write
   - multiple sidenotes in one line
   - multiple sidenotes in multiple lines
+  - incomplete sidenote (had bug w/ infinite loop)
+  - test for paragraph to div extension
